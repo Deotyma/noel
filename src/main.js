@@ -44,6 +44,12 @@ if (credits) {
     a.onmouseenter = () => (a.style.textDecoration = "underline");
     a.onmouseleave = () => (a.style.textDecoration = "none");
   });
+  const details = credits.querySelector(".credits-details");
+  if (details) {
+    details.style.display = "none";
+    credits.onmouseenter = () => (details.style.display = "inline");
+    credits.onmouseleave = () => (details.style.display = "none");
+  }
 }
 
 const scene = new THREE.Scene();
