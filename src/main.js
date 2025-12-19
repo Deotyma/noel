@@ -46,8 +46,8 @@ const camera = new THREE.PerspectiveCamera(
 );
 
 const lookTarget = new THREE.Vector3(0, 4.5, 0);
-const finalCameraPosition = new THREE.Vector3(0, 6.2, 16);
-const introCameraPosition = lookTarget.clone().add(new THREE.Vector3(0.2, 0.5, 1.2));
+let finalCameraPosition = new THREE.Vector3(0, 6.2, 16);
+let introCameraPosition = lookTarget.clone().add(new THREE.Vector3(0.2, 0.5, 1.2));
 
 camera.position.copy(introCameraPosition);
 camera.lookAt(lookTarget);
@@ -77,6 +77,42 @@ createLights({ scene, camera });
 const snow = createSnow({ scene, snowCount: 1500 });
 const tree = createTree({ scene });
 const labels = createLabels({ scene, camera });
+
+function applyResponsiveLayout() {
+  const w = window.innerWidth;
+  const h = window.innerHeight || 1;
+  const aspect = w / h;
+  const isPortrait = aspect < 1;
+  const isNarrow = w <= 520;
+  const isTablet = w > 520 && w <= 1100;
+
+  const distanceFactor = isPortrait ? 1.5 : isNarrow ? 1.3 : isTablet ? 1.15 : 1;
+  const heightBoost = isPortrait ? 1.2 : isTablet ? 0.6 : 0;
+
+  finalCameraPosition = new THREE.Vector3(0, 6.2 + heightBoost, 16 * distanceFactor);
+  introCameraPosition = lookTarget
+    .clone()
+    .add(new THREE.Vector3(0.2, 0.5 + heightBoost * 0.3, 1.2 * distanceFactor * 0.6));
+
+  const dist = finalCameraPosition.distanceTo(lookTarget);
+  controls.minDistance = Math.max(5, dist * 0.55);
+  controls.maxDistance = dist * 1.15;
+
+  labels.applyLayout?.({
+    scale: isPortrait || isNarrow ? 0.78 : isTablet ? 0.9 : 1,
+    yOffset: isPortrait ? -0.4 : 0
+  });
+
+  if (introDone) {
+    camera.position.copy(finalCameraPosition);
+    camera.lookAt(lookTarget);
+    controls.update();
+  } else {
+    camera.position.copy(introCameraPosition);
+    camera.lookAt(lookTarget);
+    introStart = clock.getElapsedTime();
+  }
+}
 
 /* ===============================
     Animation Loop
@@ -125,4 +161,7 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   post.setSize(window.innerWidth, window.innerHeight);
+  applyResponsiveLayout();
 });
+
+applyResponsiveLayout();

@@ -1,21 +1,33 @@
 import * as THREE from "three";
 
-function createHandwritingLabel({ camera, text, position, width = 5.6, height = 1.6, fontSizePx = 140, duration = 3.2, delay = 0 }) {
+function createHandwritingLabel({
+  camera,
+  text,
+  position,
+  width = 5.6,
+  height = 1.6,
+  fontSizePx = 140,
+  duration = 3.2,
+  delay = 0
+}) {
   const canvasWidth = 1024;
   const canvasHeight = 256;
   const padding = 60;
   const baselineY = Math.round(canvasHeight * 0.62);
 
   const sourceCanvas = document.createElement("canvas");
-  sourceCanvas.width = canvasWidth; sourceCanvas.height = canvasHeight;
+  sourceCanvas.width = canvasWidth;
+  sourceCanvas.height = canvasHeight;
   const sourceCtx = sourceCanvas.getContext("2d");
 
   const maskCanvas = document.createElement("canvas");
-  maskCanvas.width = canvasWidth; maskCanvas.height = canvasHeight;
+  maskCanvas.width = canvasWidth;
+  maskCanvas.height = canvasHeight;
   const maskCtx = maskCanvas.getContext("2d");
 
   const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = canvasWidth; outputCanvas.height = canvasHeight;
+  outputCanvas.width = canvasWidth;
+  outputCanvas.height = canvasHeight;
   const outputCtx = outputCanvas.getContext("2d");
 
   function renderSource() {
@@ -35,12 +47,21 @@ function createHandwritingLabel({ camera, text, position, width = 5.6, height = 
 
   const plane = new THREE.Mesh(
     new THREE.PlaneGeometry(width, height),
-    new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.98, depthWrite: false })
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      opacity: 0.98,
+      depthWrite: false
+    })
   );
 
   const particle = new THREE.Mesh(
     new THREE.SphereGeometry(0.055, 16, 16),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.9 })
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.9
+    })
   );
 
   const group = new THREE.Group();
@@ -75,11 +96,17 @@ function createHandwritingLabel({ camera, text, position, width = 5.6, height = 
     texture.needsUpdate = true;
 
     const u = x / canvasWidth;
-    particle.position.set(-width / 2 + width * u, -height / 2 + height * (baselineY / canvasHeight), 0.02);
+    particle.position.set(
+      -width / 2 + width * u,
+      -height / 2 + height * (baselineY / canvasHeight),
+      0.02
+    );
   }
 
   document.fonts.load(`${fontSizePx}px Parisienne`).then(() => {
-    renderSource(); draw(0); fontReady = true;
+    renderSource();
+    draw(0);
+    fontReady = true;
   });
 
   return {
@@ -100,17 +127,34 @@ function createHandwritingLabel({ camera, text, position, width = 5.6, height = 
 }
 
 export function createLabels({ scene, camera }) {
-  const labels = [
-    createHandwritingLabel({ camera, text: "Joyeux Noël", position: new THREE.Vector3(-7.2, 5.0, 0.2), delay: 1.3 }),
-    createHandwritingLabel({ camera, text: "Bonne Année", position: new THREE.Vector3(7.2, 5.5, 0.2), delay: 4.3 }),
-    createHandwritingLabel({ camera, text: "2026", position: new THREE.Vector3(7.2, 4.5, 0.2), duration: 2, delay: 6.3 })
+  const defs = [
+    { text: "Joyeux Noël", position: new THREE.Vector3(-7.2, 5.0, 0.2), delay: 1.3 },
+    { text: "Bonne Année", position: new THREE.Vector3(7.2, 5.5, 0.2), delay: 4.3 },
+    { text: "2026", position: new THREE.Vector3(7.2, 4.5, 0.2), duration: 2, delay: 6.3 }
   ];
 
-  labels.forEach((l) => scene.add(l.group));
+  const labels = defs.map((def) => {
+    const label = createHandwritingLabel({ camera, ...def });
+    const basePosition = def.position.clone();
+    scene.add(label.group);
+    return { label, basePosition };
+  });
+
+  function applyLayout({ scale = 1, yOffset = 0 } = {}) {
+    labels.forEach(({ label, basePosition }) => {
+      label.group.scale.setScalar(scale);
+      label.group.position.set(
+        basePosition.x * scale,
+        basePosition.y * scale + yOffset,
+        basePosition.z
+      );
+    });
+  }
 
   return {
     update(t) {
-      labels.forEach((l) => l.update(t));
-    }
+      labels.forEach((entry) => entry.label.update(t));
+    },
+    applyLayout
   };
 }
