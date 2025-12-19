@@ -34,6 +34,87 @@ const finalCameraPosition = new THREE.Vector3(0, 6.2, 16);
 const introCameraPosition = lookTarget.clone().add(new THREE.Vector3(0.2, 0.5, 1.2));
 camera.position.copy(introCameraPosition);
 camera.lookAt(lookTarget);
+const audioListener = new THREE.AudioListener();
+camera.add(audioListener);
+const music = new THREE.Audio(audioListener);
+const audioLoader = new THREE.AudioLoader();
+
+function createMusicButton() {
+  const btn = document.createElement("button");
+  btn.textContent = "Play music";
+  btn.style.position = "fixed";
+  btn.style.top = "16px";
+  btn.style.right = "16px";
+  btn.style.zIndex = "10";
+  btn.style.padding = "10px 14px";
+  btn.style.border = "none";
+  btn.style.borderRadius = "8px";
+  btn.style.background = "rgba(255,255,255,0.85)";
+  btn.style.color = "#0e2a53";
+  btn.style.fontFamily = "sans-serif";
+  btn.style.fontSize = "14px";
+  btn.style.cursor = "pointer";
+  btn.style.boxShadow = "0 6px 18px rgba(0,0,0,0.25)";
+  btn.style.transition = "transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease";
+  btn.onmouseenter = () => {
+    btn.style.transform = "translateY(-1px)";
+    btn.style.boxShadow = "0 10px 22px rgba(0,0,0,0.28)";
+  };
+  btn.onmouseleave = () => {
+    btn.style.transform = "translateY(0)";
+    btn.style.boxShadow = "0 6px 18px rgba(0,0,0,0.25)";
+  };
+
+  let isLoaded = false;
+  let isLoading = false;
+  let isPlaying = false;
+
+  function updateLabel() {
+    btn.textContent = isPlaying ? "Pause music" : isLoaded ? "Play music" : "Play music";
+  }
+
+  btn.onclick = () => {
+    if (!isLoaded) {
+      if (isLoading) return;
+      isLoading = true;
+      btn.textContent = "Loading...";
+      audioLoader.load(
+        "/Go-Tell-It-On-The-Mountain-4-Verses.mp3",
+        buffer => {
+          music.setBuffer(buffer);
+          music.setLoop(true);
+          music.setVolume(0.35);
+          music.play();
+          isLoaded = true;
+          isPlaying = true;
+          isLoading = false;
+          updateLabel();
+        },
+        undefined,
+        () => {
+          btn.textContent = "Load failed";
+          isLoading = false;
+          setTimeout(updateLabel, 1500);
+        }
+      );
+      return;
+    }
+
+    if (isPlaying) {
+      music.pause();
+      isPlaying = false;
+    } else {
+      music.play();
+      isPlaying = true;
+    }
+    updateLabel();
+  };
+
+  updateLabel();
+  document.body.appendChild(btn);
+}
+
+createMusicButton();
 
 /* ===============================
    Post-Processing 
