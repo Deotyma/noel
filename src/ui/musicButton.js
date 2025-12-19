@@ -1,6 +1,9 @@
 import * as THREE from "three";
 
-export function createMusicButton({ camera, audioUrl = "/Go-Tell-It-On-The-Mountain-4-Verses.mp3" }) {
+export function createMusicButton({
+  camera,
+  fileName = "Go-Tell-It-On-The-Mountain-4-Verses.mp3"
+}) {
   const listener = new THREE.AudioListener();
   camera.add(listener);
 
@@ -12,16 +15,26 @@ export function createMusicButton({ camera, audioUrl = "/Go-Tell-It-On-The-Mount
   btn.style.position = "fixed";
   btn.style.top = "16px";
   btn.style.right = "16px";
-  btn.style.zIndex = "10";
+  btn.style.zIndex = "15";
   btn.style.padding = "10px 14px";
   btn.style.border = "none";
-  btn.style.borderRadius = "8px";
-  btn.style.background = "rgba(255,255,255,0.85)";
-  btn.style.color = "#0e2a53";
-  btn.style.fontFamily = "sans-serif";
+  btn.style.borderRadius = "10px";
+  btn.style.background = "rgba(255,255,255,0.9)";
+  btn.style.color = "#0d2450";
+  btn.style.fontFamily = "Inter, system-ui, sans-serif";
   btn.style.fontSize = "14px";
   btn.style.cursor = "pointer";
-  btn.style.boxShadow = "0 6px 18px rgba(0,0,0,0.25)";
+  btn.style.boxShadow = "0 10px 24px rgba(0,0,0,0.25)";
+  btn.style.transition = "transform 0.15s ease, box-shadow 0.15s ease";
+  btn.onmouseenter = () => {
+    btn.style.transform = "translateY(-1px)";
+    btn.style.boxShadow = "0 14px 30px rgba(0,0,0,0.28)";
+  };
+  btn.onmouseleave = () => {
+    btn.style.transform = "translateY(0)";
+    btn.style.boxShadow = "0 10px 24px rgba(0,0,0,0.25)";
+  };
+  document.body.appendChild(btn);
 
   let isLoaded = false;
   let isLoading = false;
@@ -31,14 +44,20 @@ export function createMusicButton({ camera, audioUrl = "/Go-Tell-It-On-The-Mount
     btn.textContent = isPlaying ? "Pause music" : "Play music";
   }
 
-  btn.onclick = () => {
+  btn.onclick = async () => {
+    // (optionnel mais utile sur certains navigateurs)
+    const ctx = THREE.AudioContext.getContext();
+    if (ctx.state === "suspended") await ctx.resume();
+
+    const url = `${import.meta.env.BASE_URL}${fileName}`; // ✅ IMPORTANT
+
     if (!isLoaded) {
       if (isLoading) return;
       isLoading = true;
       btn.textContent = "Loading...";
 
       loader.load(
-        audioUrl,
+        url,
         (buffer) => {
           music.setBuffer(buffer);
           music.setLoop(true);
@@ -70,7 +89,6 @@ export function createMusicButton({ camera, audioUrl = "/Go-Tell-It-On-The-Mount
   };
 
   updateLabel();
-  document.body.appendChild(btn);
-
   return { music };
 }
+
